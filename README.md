@@ -1,5 +1,7 @@
 # Rust-CS128-HonorsProject
-Group Name - 
+Group Name - EnergiAI
+
+
 Group Members -
   1. Aryan Gupta - aryan10
   2. Ritvik Sood - ritviks3
