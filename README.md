@@ -17,8 +17,12 @@ The main goal of this project is to develop an energy consumption model that can
 
 ## Technical Overview:
   
-  Please provide a moderate-length technical description of the major components of your project. This should also function as a sort of ‘roadmap’ for tasks you need     to complete for your project to be functional.
-  Please list what you plan to have finished by each checkpoint. These are meant to be goals to keep your project on track. We will NOT grade your checkpoints on how      much you have completed, but on whether or not you’ve made some progress.
+ 1. Researching the way energy is used by society currently and finding public datasets to use for our ML model
+ 2. Using a Time Series classfication model to understand trends in energy consumption
+ 3. Creating a UI to understand these trends more easily
+ 4. Judging the main parameters that effect the amount energy used in a paticular geographical location or by a type of household/Business
+ 5. Optimizing the energy flow by using a Djixtra based algorithm.
+ 6. Finally, develop an energy consumption model that can adjust energy supply to meet predicted demand, reducing waste and increasing efficiency
 
 ## Possible Challenges:
 
