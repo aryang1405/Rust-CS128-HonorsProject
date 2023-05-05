@@ -39,3 +39,12 @@ We will draw some inspiration from the homework about the K-Nearest Neighbors (K
 1. timeseries: https://docs.rs/timeseries/latest/timeseries/
 2. knn: https://docs.rs/knn/latest/knn/ 
 3. Rusty Machine: https://athemathmo.github.io/rusty-machine/doc/rusty_machine/index.html
+
+## Results
+
+<ipython-input-7-b1ea0acb1c78>:27: FutureWarning: weekofyear and week have been deprecated, please use DatetimeIndex.isocalendar().week instead, which returns a Series. To exactly reproduce the behavior of week and weekofyear and return an Index, you may call pd.Int64Index(idx.isocalendar().week)
+  df_hourly["weekofyear"] = df_hourly.index.weekofyear
+Mean Squared Error: 0.05213198362988421
+![alt text](images/my_image.png)
+
+
