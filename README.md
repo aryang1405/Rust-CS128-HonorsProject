@@ -44,6 +44,7 @@ We will draw some inspiration from the homework about the K-Nearest Neighbors (K
 
 
 Mean Squared Error: 0.05213198362988421
-![alt text](images/my_image.png)
+
+![alt text](images/Unknown-7.png)
 
 
