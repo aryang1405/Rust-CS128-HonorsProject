@@ -1,55 +1,81 @@
-use std::error::Error;
 use std::fs::File;
-use std::io::BufReader;
-use std::path::Path;
-use csv::ReaderBuilder;
-use chrono::{NaiveDateTime, Utc};
-use ts_rs::{TimeSeries, TimeSeriesData, TimeSeriesError};
-use knn::{Knn, Weighting};
+use std::io::{BufRead, BufReader};
+use std::error::Error;
+use std::collections::HashMap;
+
+struct Observation {
+    features: Vec<f64>,
+    label: f64,
+}
+
+fn read_data(file_path: &str) -> Result<Vec<Observation>, Box<dyn Error>> {
+    let file = File::open(file_path)?;
+    let reader = BufReader::new(file);
+
+    let mut data = Vec::new();
+    for line in reader.lines().skip(1) {
+        let line = line?;
+        let values: Vec<f64> = line.split(';')
+                                   .map(|s| s.parse::<f64>().unwrap())
+                                   .collect();
+        let obs = Observation {
+            features: values[..-1].to_vec(),
+            label: values.last().unwrap().clone(),
+        };
+        data.push(obs);
+    }
+
+    Ok(data)
+}
+
+fn predict_knn(k: usize, train_data: &[Observation], test_point: &[f64]) -> f64 {
+    let mut dist_map = HashMap::new();
+    for obs in train_data {
+        let dist = euclidean_distance(&obs.features, test_point);
+        dist_map.insert(dist, obs.label);
+    }
+
+    let mut k_neighbors = Vec::new();
+    for dist in dist_map.keys().sorted().take(k) {
+        k_neighbors.push(dist_map.get(dist).unwrap());
+    }
+
+    *k_neighbors.iter().sum::<f64>() / k as f64
+}
+
+fn euclidean_distance(point1: &[f64], point2: &[f64]) -> f64 {
+    let sum_squares = point1.iter()
+                            .zip(point2.iter())
+                            .map(|(&x, &y)| (x - y).powi(2))
+                            .sum::<f64>();
+    sum_squares.sqrt()
+}
 
 fn main() -> Result<(), Box<dyn Error>> {
-    // Read electricity consumption data from CSV file
-    let file = File::open("electricity_consumption.csv")?;
-    let mut reader = ReaderBuilder::new().has_headers(false).from_reader(BufReader::new(file));
-    let mut data = vec![];
-    for result in reader.records() {
-        let record = result?;
-        let datetime = NaiveDateTime::parse_from_str(record[0].as_ref(), "%Y-%m-%dT%H:%M:%SZ")?;
-        let consumption = record[1].parse::<f64>()?;
-        data.push((datetime.timestamp() as u64, consumption));
+    let data = read_data("household_power_consumption.txt")?;
+    let n_samples = data.len();
+    let train_size = (n_samples as f64 * 0.8).round() as usize;
+
+    let mut train_data = Vec::new();
+    let mut test_data = Vec::new();
+    for (i, obs) in data.iter().enumerate() {
+        if i < train_size {
+            train_data.push(obs.clone());
+        } else {
+            test_data.push(obs.clone());
+        }
     }
 
-    // Create time series data from consumption data
-    let mut time_series_data = TimeSeriesData::new();
-    for (timestamp, consumption) in data {
-        time_series_data.add_entry(timestamp, consumption)?;
+    let mut correct_predictions = 0;
+    for test_point in &test_data {
+        let predicted = predict_knn(5, &train_data, &test_point.features);
+        if (predicted - test_point.label).abs() < 0.1 {
+            correct_predictions += 1;
+        }
     }
 
-    // Resample time series data to hourly frequency
-    let resampled_time_series_data = time_series_data.resample("1H")?;
-
-    // Split time series data into train and test sets
-    let train_data = resampled_time_series_data.slice(None, Some(-24 * 7));
-    let test_data = resampled_time_series_data.slice(Some(-24 * 7), None);
-
-    // Train K-Nearest Neighbors model on train data
-    let mut knn = Knn::new(train_data, 5, Weighting::Distance)?;
-    knn.train()?;
-
-    // Make predictions on test data
-    let mut predictions = vec![];
-    for (timestamp, _) in test_data.timestamps() {
-        let consumption = test_data.get_entry(timestamp)?;
-        let prediction = knn.predict(consumption)?;
-        let datetime = NaiveDateTime::from_timestamp(timestamp as i64, 0);
-        predictions.push((Utc.from_utc_datetime(&datetime), prediction));
-    }
-
-    // Print predictions
-    for (datetime, prediction) in predictions {
-        println!("{}: {}", datetime, prediction);
-    }
+    let accuracy = correct_predictions as f64 / test_data.len() as f64;
+    println!("Accuracy: {:.2}%", accuracy * 100.0);
 
     Ok(())
 }
-
